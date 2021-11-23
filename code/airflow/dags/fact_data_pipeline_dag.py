@@ -20,9 +20,6 @@ default_args = {
     #'email_on_retry': False
 }
 
-immigration_data_path = \
-    "{{execution_date.strftime('capstone/immigration.parquet/arrival_day=%-d/')}}"
-
 dag = DAG('data_pipeline_dag',
           default_args=default_args,
           description='Loads and transforms fact table data from S3 to Redshift with Airflow',
@@ -39,8 +36,8 @@ stage_immigration_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key=immigration_data_path
-    truncate_table=True,
+    s3_key="capstone/immigration.parquet/arrival_date=" + {{ ds }} + "/"
+    truncate_data=True,
     data_format="PARQUET"
 )
 
@@ -50,42 +47,6 @@ load_immigration_table = LoadFromTableOperator(
     redshift_conn_id="redshift",
     table="fact_immigration",
     sql_statement=SqlQueries.fact_immigration_table_insert
-)
-
-load_user_dimension_table = LoadDimensionOperator(
-    task_id='Load_user_dim_table',
-    dag=dag,
-    redshift_conn_id="redshift",
-    table="users",
-    sql_statement=SqlQueries.user_table_insert,
-    truncate_data=True
-)
-
-load_song_dimension_table = LoadDimensionOperator(
-    task_id='Load_song_dim_table',
-    dag=dag,
-    redshift_conn_id="redshift",
-    table="songs",
-    sql_statement=SqlQueries.song_table_insert,
-    truncate_data=True
-)
-
-load_artist_dimension_table = LoadDimensionOperator(
-    task_id='Load_artist_dim_table',
-    dag=dag,
-    redshift_conn_id="redshift",
-    table="artists",
-    sql_statement=SqlQueries.artist_table_insert,
-    truncate_data=True
-)
-
-load_time_dimension_table = LoadDimensionOperator(
-    task_id='Load_time_dim_table',
-    dag=dag,
-    redshift_conn_id="redshift",
-    table="\"time\"",
-    sql_statement=SqlQueries.time_table_insert,
-    truncate_data=True
 )
 
 run_quality_checks = DataQualityOperator(
@@ -103,21 +64,8 @@ run_quality_checks = DataQualityOperator(
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
-start_operator >> stage_events_to_redshift
-start_operator >> stage_songs_to_redshift
-
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
-
-load_songplays_table >> load_song_dimension_table
-load_songplays_table >> load_user_dimension_table
-load_songplays_table >> load_artist_dimension_table
-load_songplays_table >> load_time_dimension_table
-
-load_song_dimension_table >> run_quality_checks
-load_user_dimension_table >> run_quality_checks
-load_artist_dimension_table >> run_quality_checks
-load_time_dimension_table >> run_quality_checks
-
+start_operator >> stage_immigration_to_redshift
+stage_immigration_to_redshift >> load_immigration_table
+load_immigration_table >> run_quality_checks
 run_quality_checks >> end_operator
 

@@ -5,14 +5,20 @@ from airflow.utils.decorators import apply_defaults
 
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
-    copy_sql = """
+    copy_sql_parquet = """
         COPY {}
         FROM '{}'
         ACCESS_KEY_ID '{}'
         SECRET_ACCESS_KEY '{}'
-        JSON '{}'
-        TIMEFORMAT AS 'epochmillisecs'
-        REGION 'us-west-2'
+        FORMAT AS PARQUET
+    """
+    copy_sql_csv = """
+        COPY {}
+        FROM '{}'
+        ACCESS_KEY_ID '{}'
+        SECRET_ACCESS_KEY '{}'
+        IGNOREHEADER {}
+        DELIMITER '{}'
     """
 
     @apply_defaults
@@ -22,7 +28,10 @@ class StageToRedshiftOperator(BaseOperator):
                  table="",
                  s3_bucket="",
                  s3_key="",
-                 json_path="auto",
+                 truncate_data=True,
+                 data_format="CSV",
+                 ignore_headers=1,
+                 delimiter=","
                  *args, **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
@@ -31,28 +40,46 @@ class StageToRedshiftOperator(BaseOperator):
         self.table = table
         self.s3_bucket = s3_bucket
         self.s3_key = s3_key
-        self.json_path = json_path
+        self.truncate_data = truncate_data
+        self.data_format=data_format
+        self.ignore_headers = ignore_headers
+        self.delimiter = delimiter
 
     def execute(self, context):
         aws_hook = AwsHook(self.aws_credentials_id)
         credentials = aws_hook.get_credentials()
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
 
-        self.log.info("Clearing data from destination Redshift table " + self.table)
-        redshift.run("DELETE FROM {}".format(self.table))
+        if self.truncate_data: 
+            self.log.info("Clearing data from destination Redshift table " + self.table)
+            redshift.run("DELETE FROM {}".format(self.table))
 
         self.log.info("Copying data from S3 bucket " + self.s3_bucket + " to Redshift table " + self.table + " started")
         rendered_key = self.s3_key.format(**context)
         s3_path = "s3://{}/{}".format(self.s3_bucket, rendered_key)
-        formatted_sql = StageToRedshiftOperator.copy_sql.format(
-            self.table,
-            s3_path,
-            credentials.access_key,
-            credentials.secret_key,
-            self.json_path
-        )
-        redshift.run(formatted_sql)
-        self.log.info("Copying data from S3 bucket " + self.s3_bucket + " to Redshift table " + self.table + " complete")
+        
+        if self.data_format == "PARQUET":
+            formatted_sql = StageToRedshiftOperator.copy_sql_parquet.format(
+                self.table,
+                s3_path,
+                credentials.access_key,
+                credentials.secret_key
+            )
+        else if self.data_format == "CSV":
+            formatted_sql = StageToRedshiftOperator.copy_sql_csv.format(
+                self.table,
+                s3_path,
+                credentials.access_key,
+                credentials.secret_key,
+                self.ignore_headers,
+                self.delimiter
+            )
+        
+        if formatted_sql:
+            redshift.run(formatted_sql)
+            self.log.info("Copying data from S3 bucket " + self.s3_bucket + " to Redshift table " + self.table + " complete")
+        else:
+            self.log.info("Not able to copy data from S3 bucket " + self.s3_bucket + " to Redshift table " + self.table + ". Invalid data format.")    
 
 
 
