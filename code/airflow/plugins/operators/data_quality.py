@@ -24,10 +24,14 @@ class DataQualityOperator(BaseOperator):
         for check in self.dq_checks:
             sql = check.get('check_sql')
             exp_result = check.get('expected_result')
+            comparison = check.get('comparison')
             records = redshift.get_records(sql)[0]
-            if exp_result != records[0]:
+            if ((comparison == '=' and exp_result != records[0]) or (comparison == '>' and exp_result <= records[0]) \
+            or (comparison == '>=' and exp_result < records[0]) or (comparsion == '<' and exp_result >= records[0]) \
+            or (comparison == '<=' and exp_result > records[0]) or (comparison == '<>'and exp_result == records[0])):                
                 error_count += 1
-                failing_tests.append(sql)
+                failing_tests.append(sql)    
+                       
         if error_count > 0:
             self.log.info('Tests failed')
             self.log.info(failing_tests)

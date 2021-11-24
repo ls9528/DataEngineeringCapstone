@@ -11,86 +11,131 @@ from helpers import SqlQueries
 
 default_args = {
     'owner': 'udacity-lhemelt',
-    'start_date': datetime(2019, 1, 12),
-    'depends_on_past': False,
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5),
-    'catchup': False,
-    'email_on_retry': False
+    #'start_date': datetime(2019, 1, 12),
+    #'depends_on_past': False,
+    #'retries': 3,
+    #'retry_delay': timedelta(minutes=5),
+    #'catchup': False,
+    #'email_on_retry': False
 }
 
-dag = DAG('udac_example_dag',
+dag = DAG('dim_data_pipeline_dag',
           default_args=default_args,
-          description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *',
+          description='Loads and transforms dimensional table data from S3 to Redshift with Airflow',
+          start_date=datetime.datetime.now(),
           max_active_runs=1
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
-stage_events_to_redshift = StageToRedshiftOperator(
-    task_id='Stage_events',
+stage_demographic_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_demographic',
     dag=dag,
-    table="staging_events",
+    table="staging_demographic",
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    s3_bucket="udacity-dend",
-    s3_key="log_data",
-    json_path="s3://udacity-dend/log_json_path.json"
+    s3_bucket="lhemelt",
+    s3_key="capstone/demographic.parquet/"
+    truncate_data=True,
+    data_format="PARQUET"
 )
 
-stage_songs_to_redshift = StageToRedshiftOperator(
-    task_id='Stage_songs',
+stage_date_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_date',
     dag=dag,
-    table="staging_songs",
+    table="staging_date",
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    s3_bucket="udacity-dend",
-    s3_key="song_data",
-    json_path="auto"
+    s3_bucket="lhemelt",
+    s3_key="capstone/date.parquet/"
+    truncate_data=True,
+    data_format="PARQUET"
 )
 
-load_songplays_table = LoadFactOperator(
-    task_id='Load_songplays_fact_table',
+stage_city_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_city',
     dag=dag,
+    table="staging_city",
     redshift_conn_id="redshift",
-    table="songplays",
-    sql_statement=SqlQueries.songplay_table_insert
+    aws_credentials_id="aws_credentials",
+    s3_bucket="lhemelt",
+    s3_key="capstone/dim_city.csv"
+    truncate_data=True,
+    data_format="CSV",
+    ignore_headers=1,
+    delimiter=","
 )
 
-load_user_dimension_table = LoadDimensionOperator(
-    task_id='Load_user_dim_table',
+stage_country_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_country',
     dag=dag,
+    table="dim_country",
     redshift_conn_id="redshift",
-    table="users",
-    sql_statement=SqlQueries.user_table_insert,
-    truncate_data=True
+    aws_credentials_id="aws_credentials",
+    s3_bucket="lhemelt",
+    s3_key="capstone/dim_country.csv"
+    truncate_data=True,
+    data_format="CSV",
+    ignore_headers=1,
+    delimiter=","
 )
 
-load_song_dimension_table = LoadDimensionOperator(
-    task_id='Load_song_dim_table',
+stage_state_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_state',
     dag=dag,
+    table="dim_state",
     redshift_conn_id="redshift",
-    table="songs",
-    sql_statement=SqlQueries.song_table_insert,
-    truncate_data=True
+    aws_credentials_id="aws_credentials",
+    s3_bucket="lhemelt",
+    s3_key="capstone/dim_state.csv"
+    truncate_data=True,
+    data_format="CSV",
+    ignore_headers=1,
+    delimiter=","
 )
 
-load_artist_dimension_table = LoadDimensionOperator(
-    task_id='Load_artist_dim_table',
+stage_visa_type_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_visa_type',
     dag=dag,
+    table="dim_visa_type",
     redshift_conn_id="redshift",
-    table="artists",
-    sql_statement=SqlQueries.artist_table_insert,
-    truncate_data=True
+    aws_credentials_id="aws_credentials",
+    s3_bucket="lhemelt",
+    s3_key="capstone/dim_visa_type.csv"
+    truncate_data=True,
+    data_format="CSV",
+    ignore_headers=1,
+    delimiter=","
 )
 
-load_time_dimension_table = LoadDimensionOperator(
-    task_id='Load_time_dim_table',
+stage_travel_mode_to_redshift = StageToRedshiftOperator(
+    task_id='Stage_travel_mode',
+    dag=dag,
+    table="dim_travel_mode",
+    redshift_conn_id="redshift",
+    aws_credentials_id="aws_credentials",
+    s3_bucket="lhemelt",
+    s3_key="capstone/dim_travel_mode.csv"
+    truncate_data=True,
+    data_format="CSV",
+    ignore_headers=1,
+    delimiter=","
+)
+
+load_city_table = LoadTableOperator(
+    task_id='Load_city_dim_table',
     dag=dag,
     redshift_conn_id="redshift",
-    table="\"time\"",
-    sql_statement=SqlQueries.time_table_insert,
+    table="dim_city",
+    sql_statement=SqlQueries.dim_city_insert
+)
+
+load_date_table = LoadTableOperator(
+    task_id='Load_date_dim_table',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="dim_date",
+    sql_statement=SqlQueries.dim_date_insert,
     truncate_data=True
 )
 
@@ -99,31 +144,23 @@ run_quality_checks = DataQualityOperator(
     dag=dag,
     redshift_conn_id='redshift',
     dq_checks=[
-        {'check_sql': "SELECT COUNT(*) FROM songplays WHERE playid is null", 'expected_result': 0},
-        {'check_sql': "SELECT COUNT(*) FROM users WHERE userid is null", 'expected_result': 0},
-        {'check_sql': "SELECT COUNT(*) FROM songs WHERE songid is null", 'expected_result': 0},
-        {'check_sql': "SELECT COUNT(*) FROM artists WHERE artistid is null", 'expected_result': 0},
-        {'check_sql': "SELECT COUNT(*) FROM \"time\" WHERE start_time is null", 'expected_result': 0}
+        {'check_sql': "SELECT COUNT(*) FROM dim_city", 'expected_result': 0 , 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM dim_date", 'expected_result': 0 , 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM dim_country", 'expected_result': 0 , 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM dim_state", 'expected_result': 0 , 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM dim_visa_type", 'expected_result': 0 , 'comparison': ">"},
+        {'check_sql': "SELECT COUNT(*) FROM dim_travel_mode", 'expected_result': 0 , 'comparison': ">"}
     ]
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
-start_operator >> stage_events_to_redshift
-start_operator >> stage_songs_to_redshift
+start_operator >> [stage_demographic_to_redshift, stage_date_to_redshift, stage_city_to_redshift, stage_country_to_redshift, stage_state_to_redshift, stage_visa_type_to_redshift, stage_travel_mode_to_redshift]
 
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
+stage_date_to_redshift >> load_date_table
+[stage_demographic_to_redshift, stage_city_to_redshift] >> load_city_table
 
-load_songplays_table >> load_song_dimension_table
-load_songplays_table >> load_user_dimension_table
-load_songplays_table >> load_artist_dimension_table
-load_songplays_table >> load_time_dimension_table
-
-load_song_dimension_table >> run_quality_checks
-load_user_dimension_table >> run_quality_checks
-load_artist_dimension_table >> run_quality_checks
-load_time_dimension_table >> run_quality_checks
+[stage_country_to_redshift, stage_state_to_redshift, stage_visa_type_to_redshift, stage_travel_mode_to_redshift, load_date_table, load_city_table] >> run_quality_checks
 
 run_quality_checks >> end_operator
 
