@@ -41,12 +41,13 @@ stage_immigration_to_redshift = StageToRedshiftOperator(
     data_format="PARQUET"
 )
 
-load_immigration_table = LoadFromTableOperator(
+load_immigration_table = LoadTableOperator(
     task_id='Load_immigration_fact_table',
     dag=dag,
     redshift_conn_id="redshift",
     table="fact_immigration",
-    sql_statement=SqlQueries.fact_immigration_table_insert
+    sql_statement=SqlQueries.fact_immigration_insert,
+    truncate_data=False
 )
 
 run_quality_checks = DataQualityOperator(

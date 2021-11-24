@@ -1,3 +1,4 @@
+city_code,city_name,state_code
 ALC,ALCAN,AK          
 ANC,ANCHORAGE,AK      
 BAR,BAKER AAF - BAKER ISLAND,AK
@@ -26,7 +27,7 @@ LIA,LITTLE ROCK,AR (BPS)
 ROG,ROGERS ARPT,AR
 DOU,DOUGLAS,AZ        
 LUK,LUKEVILLE,AZ      
-MAP,MARIPOSA AZ        
+MAP,MARIPOSA,AZ        
 NAC,NACO,AZ           
 NOG,NOGALES,AZ        
 PHO,PHOENIX,AZ        

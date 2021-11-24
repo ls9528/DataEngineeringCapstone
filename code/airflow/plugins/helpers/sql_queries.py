@@ -19,25 +19,27 @@ class SqlQueries:
             LEFT JOIN dim_city ci ON i.arrival_city_id = ci.city_code
             LEFT JOIN dim_state st ON i.current_state_id = st.state_code
     """)
-
-    user_table_insert = ("""
-        SELECT distinct userid, firstname, lastname, gender, level
-        FROM staging_events
-        WHERE page='NextSong'
+    
+    dim_date_insert = ("""
+        SELECT date_id, extract(month from date_id), extract(day from date_id), extract(year from date_id), extract(week from date_id), 
+            extract(dayofweek from date_id)
+        FROM staging_date
     """)
 
-    song_table_insert = ("""
-        SELECT distinct song_id, title, artist_id, year, duration
-        FROM staging_songs
-    """)
-
-    artist_table_insert = ("""
-        SELECT distinct artist_id, artist_name, artist_location, artist_latitude, artist_longitude
-        FROM staging_songs
-    """)
-
-    time_table_insert = ("""
-        SELECT start_time, extract(hour from start_time), extract(day from start_time), extract(week from start_time), 
-               extract(month from start_time), extract(year from start_time), extract(dayofweek from start_time)
-        FROM songplays
+    dim_city_insert = ("""
+        SELECT 
+            c.city_code, 
+            c.city_name,
+            s.state_id,
+            d.median_age,
+            d.male_population,
+            d.female_population,
+            d.total_population,
+            d.veteran_population,
+            d.foreign_population,
+            d.avg_household_size,
+            d.race_majority
+        FROM staging_city c
+        LEFT JOIN staging_state s on c.state_code = s.state_code
+        LEFT JOIN staging_demographic d on c.city_name = d.city and c.state_code = d.state_code 
     """)
