@@ -2,27 +2,18 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+from airflow.operators import (StageToRedshiftOperator, LoadTableOperator,
+                                DataQualityOperator)
 from helpers import SqlQueries
-
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'udacity-lhemelt',
-    #'start_date': datetime(2019, 1, 12),
-    #'depends_on_past': False,
-    #'retries': 3,
-    #'retry_delay': timedelta(minutes=5),
-    #'catchup': False,
-    #'email_on_retry': False
 }
 
 dag = DAG('dim_data_pipeline_dag',
           default_args=default_args,
           description='Loads and transforms dimensional table data from S3 to Redshift with Airflow',
-          start_date=datetime.datetime.now(),
+          start_date=datetime.now(),
           max_active_runs=1
         )
 
@@ -35,7 +26,7 @@ stage_demographic_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/demographic.parquet/"
+    s3_key="capstone/demographic.parquet/",
     truncate_data=True,
     data_format="PARQUET"
 )
@@ -47,7 +38,7 @@ stage_date_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/date.parquet/"
+    s3_key="capstone/date.parquet/",
     truncate_data=True,
     data_format="PARQUET"
 )
@@ -59,11 +50,11 @@ stage_city_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/dim_city.csv"
+    s3_key="capstone/dim_city.csv",
     truncate_data=True,
     data_format="CSV",
     ignore_headers=1,
-    delimiter=","
+    delimiter="|"
 )
 
 stage_country_to_redshift = StageToRedshiftOperator(
@@ -73,11 +64,11 @@ stage_country_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/dim_country.csv"
+    s3_key="capstone/dim_country.csv",
     truncate_data=True,
     data_format="CSV",
     ignore_headers=1,
-    delimiter=","
+    delimiter="|"
 )
 
 stage_state_to_redshift = StageToRedshiftOperator(
@@ -87,7 +78,7 @@ stage_state_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/dim_state.csv"
+    s3_key="capstone/dim_state.csv",
     truncate_data=True,
     data_format="CSV",
     ignore_headers=1,
@@ -101,7 +92,7 @@ stage_visa_type_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/dim_visa_type.csv"
+    s3_key="capstone/dim_visa_type.csv",
     truncate_data=True,
     data_format="CSV",
     ignore_headers=1,
@@ -115,7 +106,7 @@ stage_travel_mode_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/dim_travel_mode.csv"
+    s3_key="capstone/dim_travel_mode.csv",
     truncate_data=True,
     data_format="CSV",
     ignore_headers=1,
@@ -127,6 +118,7 @@ load_city_table = LoadTableOperator(
     dag=dag,
     redshift_conn_id="redshift",
     table="dim_city",
+    columns="(city_code,city_name,state_id,median_age,male_population,female_population,total_population,veteran_population,foreign_population,avg_household_size,race_majority)",
     sql_statement=SqlQueries.dim_city_insert
 )
 

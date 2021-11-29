@@ -57,6 +57,7 @@ def process_demographic_data(spark, input_data, output_data):
         .withColumn("Female Population", df_spark["Female Population"].cast(IntegerType())) \
         .withColumn("Total Population", df_spark["Total Population"].cast(IntegerType())) \
         .withColumn("Number of Veterans", df_spark["Number of Veterans"].cast(IntegerType())) \
+        .withColumn("Foreign-born", df_spark["Foreign-born"].cast(IntegerType())) \
         .withColumn("Average Household Size", df_spark["Average Household Size"].cast(DoubleType())) \
         .withColumn("Count", df_spark["Count"].cast(IntegerType()))
 
@@ -131,8 +132,11 @@ def process_immigration_data(spark, input_data, output_data):
 
     df_spark = df_spark.withColumn("arrival_date", to_date(df_spark.arrival_date, 'yyyy-MM-dd')).withColumn("departure_date", to_date(df_spark.departure_date, 'yyyy-MM-dd'))
     
+    # duplicate arrival_date column to partition by
+    df_spark = df_spark.withColumn("arrival_date_partition", df_spark["arrival_date"])
+    
     # write immigration table to parquet files partitioned by arrival date
-    df_spark.write.mode('overwrite').partitionBy('arrival_date').parquet(os.path.join(output_data, 'capstone/immigration.parquet'))
+    df_spark.write.mode('overwrite').partitionBy('arrival_date_partition').parquet(os.path.join(output_data, 'capstone/immigration.parquet'))
 
     # create table of unique date values
     df_spark_date1 = df_spark.select(col('arrival_date').alias('date_id')).dropDuplicates() 
@@ -140,7 +144,7 @@ def process_immigration_data(spark, input_data, output_data):
     date_df = df_spark_date1.union(df_spark_date2).distinct()
 
     # write date table to parquet files
-    date_df.write.mode('overwrite').parquet(os.path.join(output_data, 'capstone/date.parquet'))
+    #date_df.write.mode('overwrite').parquet(os.path.join(output_data, 'capstone/date.parquet'))
 
 
 def main():
@@ -161,7 +165,7 @@ def main():
     input_data = "s3a://udacity-dend/"
     output_data = "s3a://lhemelt/"
     
-    process_demographic_data(spark, input_data, output_data)    
+    #process_demographic_data(spark, input_data, output_data)    
     process_immigration_data(spark, input_data, output_data)
 
 

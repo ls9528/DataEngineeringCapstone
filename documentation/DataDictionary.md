@@ -49,13 +49,13 @@
 | city_code | varchar(3) | I-94 city code |
 | city_name | varchar(256) | name of city |
 | state_id | int4 | city's state |
-| median_age | numeric(3,1) | median age in city |
+| median_age | float | median age in city |
 | male_population | int4 | male population in city |
 | female_population | int4 | female population in city |
 | total_population | int4 | total population in city |
 | veteran_population | int4 | veteran population in city |
 | foreign_population | int4 | foreign-born population in city |
-| avg_household_size | numeric(2,2) | avergae household size in city |
+| avg_household_size | float | avergae household size in city |
 | race_majority | string | race majority in city |
 
 

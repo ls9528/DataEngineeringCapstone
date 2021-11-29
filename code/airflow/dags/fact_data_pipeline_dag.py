@@ -2,22 +2,16 @@ from datetime import datetime, timedelta
 import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+from airflow.operators import (StageToRedshiftOperator, LoadTableOperator,
+                                DataQualityOperator)
 from helpers import SqlQueries
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
+EXEC_DATE = "{ds}"
 
 default_args = {
     'owner': 'udacity-lhemelt',
     'start_date': datetime(2016, 4, 1),
     'end_date': datetime(2016, 4, 30)
-    #'depends_on_past': False,
-    #'retries': 3,
-    #'retry_delay': timedelta(minutes=5),
-    #'catchup': False,
-    #'email_on_retry': False
 }
 
 dag = DAG('fact_data_pipeline_dag',
@@ -36,7 +30,7 @@ stage_immigration_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="lhemelt",
-    s3_key="capstone/immigration.parquet/arrival_date=" + {{ ds }} + "/"
+    s3_key="capstone/immigration.parquet/arrival_date_partition=" + EXEC_DATE + "/",
     truncate_data=True,
     data_format="PARQUET"
 )
@@ -55,8 +49,10 @@ run_quality_checks = DataQualityOperator(
     dag=dag,
     redshift_conn_id='redshift',
     dq_checks=[
-        {'check_sql': "SELECT COUNT(*) FROM fact_immigration where arrival_date = '" + {{ ds }} "'", 'expected_result': 0 , 'comparison': ">"},
-    ]
+        {'check_sql': "SELECT COUNT(*) FROM fact_immigration where arrival_date = ", 'expected_result': 0 , 'comparison': ">"}
+    ],
+    include_date = True,
+    provide_context=True
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)

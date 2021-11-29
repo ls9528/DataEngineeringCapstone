@@ -25,31 +25,31 @@ CREATE TABLE IF NOT EXISTS public.dim_date (
 );
 
 CREATE TABLE IF NOT EXISTS public.dim_country (
-	country_id int4 NOT NULL IDENTITY(0,1),
+	country_id int4 NOT NULL IDENTITY(1,1),
 	country_code int4,
 	country_name varchar(256),
 	CONSTRAINT dim_country_pkey PRIMARY KEY (country_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.dim_state (
-	state_id int4 NOT NULL IDENTITY(0,1),
-	state_code varchar(256),
-	state_name int4,
+	state_id int4 NOT NULL IDENTITY(1,1),
+	state_code varchar(3),
+	state_name varchar(256),
 	CONSTRAINT dim_state_pkey PRIMARY KEY (state_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.dim_city (
-	city_id int4 NOT NULL IDENTITY(0,1),
+	city_id int4 NOT NULL IDENTITY(1,1),
     city_code varchar(3),
 	city_name varchar(256),
 	state_id int4,
-	median_age numeric(3,1),
+	median_age float,
 	male_population int4,
 	female_population int4,
 	total_population int4,
 	veteran_population int4,
 	foreign_population int4,
-	avg_household_size numeric(2,2),
+	avg_household_size float,
 	race_majority varchar(50),
 	CONSTRAINT dim_city_pkey PRIMARY KEY (city_id)
 );
@@ -84,20 +84,21 @@ CREATE TABLE IF NOT EXISTS public.staging_immigration (
 CREATE TABLE IF NOT EXISTS public.staging_demographic (
 	city varchar(256),
 	state_code varchar(3),
-	median_age numeric(3,1),
+	median_age double precision,
 	male_population int4,
 	female_population int4,
 	total_population int4,
 	veteran_population int4,
 	foreign_population int4,
-	avg_household_size numeric(2,2),
-	race_majority varchar(50)
+	avg_household_size double precision,
+	race_majority varchar(50),
+    race_count int4
 );
 
 CREATE TABLE IF NOT EXISTS public.staging_city (
     city_code varchar(3),
 	city_name varchar(256),
-	state_code varchar(3)
+	state_code varchar(25)
 );
 
 CREATE TABLE IF NOT EXISTS public.staging_date (

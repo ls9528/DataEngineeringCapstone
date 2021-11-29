@@ -24,6 +24,7 @@ class SqlQueries:
         SELECT date_id, extract(month from date_id), extract(day from date_id), extract(year from date_id), extract(week from date_id), 
             extract(dayofweek from date_id)
         FROM staging_date
+        WHERE date_id is not null
     """)
 
     dim_city_insert = ("""
@@ -40,6 +41,6 @@ class SqlQueries:
             d.avg_household_size,
             d.race_majority
         FROM staging_city c
-        LEFT JOIN staging_state s on c.state_code = s.state_code
-        LEFT JOIN staging_demographic d on c.city_name = d.city and c.state_code = d.state_code 
+        LEFT JOIN dim_state s on c.state_code = s.state_code
+        LEFT JOIN staging_demographic d on collate(c.city_name, 'case_insensitive') = collate(d.city, 'case_insensitive') and c.state_code = d.state_code 
     """)

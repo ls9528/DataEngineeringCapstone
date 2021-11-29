@@ -1,6 +1,8 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
+from airflow.models import Variable
+from airflow.operators.python_operator import PythonOperator
 
 class DataQualityOperator(BaseOperator):
 
@@ -10,25 +12,31 @@ class DataQualityOperator(BaseOperator):
     def __init__(self,
                  redshift_conn_id="",
                  dq_checks=[],
+                 include_date=False,
                  *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.dq_checks = dq_checks
+        self.include_date = include_date
 
     def execute(self, context):
+        exec_dt = context['ds']
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
         error_count = 0
         failing_tests = []
         self.log.info('Data quality checks started')
         for check in self.dq_checks:
             sql = check.get('check_sql')
+            if self.include_date: 
+                sql = sql + "'" + exec_dt + "'"
             exp_result = check.get('expected_result')
             comparison = check.get('comparison')
             records = redshift.get_records(sql)[0]
-            if ((comparison == '=' and exp_result != records[0]) or (comparison == '>' and exp_result <= records[0]) \
-            or (comparison == '>=' and exp_result < records[0]) or (comparsion == '<' and exp_result >= records[0]) \
-            or (comparison == '<=' and exp_result > records[0]) or (comparison == '<>'and exp_result == records[0])):                
+            
+            if ((comparison == '=' and records[0] != exp_result) or (comparison == '>' and records[0] <= exp_result) \
+            or (comparison == '>=' and records[0] < exp_result) or (comparison == '<' and records[0] >= exp_result) \
+            or (comparison == '<=' and records[0] > exp_result) or (comparison == '<>'and records[0] == exp_result)):                
                 error_count += 1
                 failing_tests.append(sql)    
                        

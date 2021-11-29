@@ -31,7 +31,7 @@ class StageToRedshiftOperator(BaseOperator):
                  truncate_data=True,
                  data_format="CSV",
                  ignore_headers=1,
-                 delimiter=","
+                 delimiter=",",
                  *args, **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
@@ -65,7 +65,7 @@ class StageToRedshiftOperator(BaseOperator):
                 credentials.access_key,
                 credentials.secret_key
             )
-        else if self.data_format == "CSV":
+        elif self.data_format == "CSV":
             formatted_sql = StageToRedshiftOperator.copy_sql_csv.format(
                 self.table,
                 s3_path,

@@ -11,7 +11,7 @@ class LoadTableOperator(BaseOperator):
     """
     
     dim_sql_template = """
-        INSERT INTO public.{table}{columns}
+        INSERT INTO public.{table} {columns}
         {sql_statement};
     """
 
@@ -19,15 +19,15 @@ class LoadTableOperator(BaseOperator):
     def __init__(self,
                  redshift_conn_id="",
                  table="",
-                 columns=""
+                 columns="",
                  sql_statement="",
                  truncate_data=True,
                  *args, **kwargs):
 
-        super(LoadDimensionOperator, self).__init__(*args, **kwargs)
+        super(LoadTableOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.table = table
-        self.columns=columns
+        self.columns = columns
         self.sql_statement = sql_statement
         self.truncate_data = truncate_data
 
@@ -42,6 +42,7 @@ class LoadTableOperator(BaseOperator):
             self.log.info("Note: appending data to Redshift table " + self.table)     
         dim_sql = LoadTableOperator.dim_sql_template.format(
             table=self.table,
+            columns=self.columns,
             sql_statement=self.sql_statement
         )
         self.log.info("Inserting data into Redshift table " + self.table + " started")
