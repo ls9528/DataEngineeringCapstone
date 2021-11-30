@@ -11,13 +11,11 @@ The project follows the following steps:
 * Step 2: Explore and Assess the Data
 * Step 3: Define the Data Model
 * Step 4: Run ETL to Model the Data
-* Step 5: Complete Project Write Up
+* Step 5: Further Questions
 
 ### Step 1: Scope the Project and Gather Data
 
 #### Scope 
-Explain what you plan to do in the project in more detail. What data do you use? What is your end solution look like? What tools did you use? etc>
-
 My plan was to take immigration data and infuse it with geographic and demographic data in order to come up with valuable insights about immigration to the United States.  The project follows this high level process:  
 
 * The data is cleaned using Spark and uploaded to S3.
@@ -30,8 +28,6 @@ These are some of the questions my project would be capable of answering:
 * What states are immigrants residing in when living in the United States?
 
 #### Describe and Gather Data 
-Describe the data sets you're using. Where did it come from? What type of information is included? 
-
 The following data sets are used in this project:
 
 ##### I94 Immigration Data
@@ -57,8 +53,6 @@ This data was provided in I94_SAS_Labels_Descriptions.SAS in the provided projec
 
 ### Step 2: Explore and Assess the Data
 #### Explore the Data 
-Identify data quality issues, like missing values, duplicate data, etc.
-
 The two main datasets that require automated cleanup are the immigration and city demographic data.  I explored the data using Spark in a Jupyter notebook.  Some of my findings included:
 
 ##### Immigration Data
@@ -73,7 +67,7 @@ The two main datasets that require automated cleanup are the immigration and cit
 #### Cleaning Steps
 Document steps necessary to clean the data
 
-I created a python module called etl.py to clean up the data and import the cleaned data to an S3 bucket as parquet files using Spark.  I decided to use Spark because it can easily handle large amounts of data.
+I created a python module called etl.py to clean up the data and import the cleaned data to an S3 bucket as parquet files using Spark.  I decided to use Spark because it can easily handle large amounts of data.  S3 was chosen as a storage solution because it is easily accessible by other useful AWS products.
 
 ##### Immigration Data
 When uploading to S3, I partitioned the immigration data by arrival date becuase it was never null and provided a fairly even distribution of the data for future pipeline steps. 
@@ -104,8 +98,40 @@ The other, smaller datasets that came from I94_SAS_Labels_Descriptions.SAS does 
 #### 3.1 Conceptual Data Model
 Map out the conceptual data model and explain why you chose that model
 
+For this project, I used a modified star schema for the data model.  My intention is to keep the queries as simple as possible by not making the tables too normalized and limiting the required number of joins.  An ER diagram of this data model can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/ERDiagram.pdf).  
+
+At the center of the data model is a fact table focusing on immigration (fact_immigration), the majority of which can be found in the immigration data.  The dimensions provide additonal information to support the immigration data (dim_date, dim_country, dim_state, dim_city, dim_visa_type, dim_travel_mode) and, other than dim_date, are taken from the other data sources.  The only diversion from the traditional star schema can be found with dim_state, which connects to dim_city as well as fact_immigration.  
+
+All the tables have an integer as their primary key except for dim_date.  
+
+The following tables use newly-created auto-incrementing IDs as primary keys:
+* dim_country
+* dim_state
+* dim_city
+
+The following tables use an existing field from the original data as primary keys:
+* fact_immigration
+* dim_date
+* dim_visa_type
+* dim_travel_mode
+
 #### 3.2 Mapping Out Data Pipelines
 List the steps necessary to pipeline the data into the chosen data model
+
+The data model is realized as a Redshift data warehouse in AWS.  I chose to store it in Redshift due to its ability to efficiently handle large amounts of data.
+
+Some of the S3 data files do not need further transforming and can be inserted directly into their respective dimension tables in Redshift. These are:
+* Country data -> dim_country
+* State data -> dim_state
+* Visa type data -> dim_visa_type
+* Travel mode data -> dim_travel_mode
+
+The rest of the S3 data files need further transformation prior to being inserted into the final Redshift tables.  The first step with this data is to insert it into staging tables.  From there, those staging tables can be queried to insert the data into the final tables in the expected format.
+* Date data - A special query to the date staging table uses date functions to populate the additonal columns in dim_date (month, day, year, week, day_of_week).
+* City data and city demographic data - After copying this data to their respective staging tables, a query joins these tables together on city name and state abbreviation to populate the dim_city table.  This query also makes a join to the already existing dim_state table to include that table's state_id field in dim_city.  
+* Immigration data - The query to the immigration staging table to populate the fact table includes joins to dim_country, dim_city, and dim_state.  These joins allow for the various newly created ID fields in these dimension tables to be included in fact_immigration.
+
+I chose Airflow to complete this data pipeline process from S3 to Redshift because it's a simple way to visualize the data pipeline process and it can handle processing the data.  It also has has many useful features, such as scheduling processes and adding data quality checks.
 
 ### Step 4: Run Pipelines to Model the Data 
 #### 4.1 Create the data model
@@ -120,8 +146,7 @@ Explain the data quality checks you'll perform to ensure the pipeline ran as exp
 Run Quality Checks
 
 #### 4.3 Data dictionary 
-The data dictionary can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/DataDictionary.md). 
-
+The data dictionary for the final data model can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/DataDictionary.md). 
 
 ### Step 5: Complete Project Write Up
 * Clearly state the rationale for the choice of tools and technologies for the project.
