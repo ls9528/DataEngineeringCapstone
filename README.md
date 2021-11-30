@@ -6,7 +6,7 @@ This project is my capstone submission for the Udacity Data Engineering Nanodegr
 
 The main set of data I used is the provided immigration data and I enhanced this data by combining it with geographic and demographic data.  Ultimately, I created an ETL process using Spark and Airflow that takes this data from separate parquet and csv files to a queryable data warehouse in Redshift.  
 
-The project follows the follow steps:
+The project follows the following steps:
 * Step 1: Scope the Project and Gather Data
 * Step 2: Explore and Assess the Data
 * Step 3: Define the Data Model
@@ -59,8 +59,48 @@ This data was provided in I94_SAS_Labels_Descriptions.SAS in the provided projec
 #### Explore the Data 
 Identify data quality issues, like missing values, duplicate data, etc.
 
+The two main datasets that require automated cleanup are the immigration and city demographic data.  I explored the data using Spark in a Jupyter notebook.  Some of my findings included:
+
+Immigration Data
+* The data spans immigrant arrival dates from 4/1/2016 to 4/30/2016
+* The total number of records arre 3,096,313
+* The dates arre provided as the number of days between 1/1/1960 and the given date
+* The field cicid is unique to each record
+
+City Demographic Data
+* There are only 5 potential values for race
+
 #### Cleaning Steps
 Document steps necessary to clean the data
+
+I created a python module called etl.py to clean up the data and import the cleaned data to an S3 bucket as parquet files using Spark.  I decided to use Spark because it can easily handle large amounts of data.
+
+##### Immigration Data
+When uploading to S3, I partitioned the immigration data by arrival date becuase it was never null and provided a fairly even distribution of the data for future pipeline steps. 
+
+I completed the following steps in etl.py to clean the immigration data and import it to S3:
+* Convert the fields to their appropriate data types
+* Rename the fields to nice, easy to understand names
+* Remove any unneeded fields
+* Convert the date fields to the format yyyy-mm-dd
+* Duplicate the arrival_date field so that the data could be partitioned by arrival_date and still be included in the data files
+* Write the data to an S3 bucket as parquet files partitioned by arrival date
+
+##### Date Data
+
+
+##### City Demographic Data
+When uploading to S3, I converted the city demographic data to parquet files as well because it is more efficient than csv.  I did not partition this dataset becuase I did not find an efficient field on which to do so and, following cleanup, the data was not significantly large.
+
+I completed the following steps in etl.py to clean the city demographic data and import it to S3:
+* Convert the fields to their appropriate data types
+* Rename the fields to nice, easy to understand names
+* Remove any unneeded fields
+* Convert the date fields to the format yyyy-mm-dd
+* Duplicate the arrival_date field so that the data could be partitioned by arrival_date and still be included in the data files
+* Write the data to an S3 bucket as parquet files partitioned by arrival date
+
+The other, smaller datasets that came from I94_SAS_Labels_Descriptions.SAS does not require cleanup using Spark.  I manually examined this data and did not find any significant issues.  Under the assumption that these are official I94 values, I did not change any of the data values, nor did I omit any of it.  I added headers to each of these datasets. I also changed the comma delimter to a pipe for the city and country data due to some data values containing commas.  Once these changes were complete, I manaully uploaded the data files to the S3 bucket.  
 
 ### Step 3: Define the Data Model
 #### 3.1 Conceptual Data Model
@@ -85,7 +125,7 @@ Run Quality Checks
 The data dictionary can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/DataDictionary.md). 
 
 
-#### Step 5: Complete Project Write Up
+### Step 5: Complete Project Write Up
 * Clearly state the rationale for the choice of tools and technologies for the project.
 * Propose how often the data should be updated and why.
 * Write a description of how you would approach the problem differently under the following scenarios:
