@@ -144,7 +144,7 @@ def process_immigration_data(spark, input_data, output_data):
     date_df = df_spark_date1.union(df_spark_date2).distinct()
 
     # write date table to parquet files
-    #date_df.write.mode('overwrite').parquet(os.path.join(output_data, 'capstone/date.parquet'))
+    date_df.write.mode('overwrite').parquet(os.path.join(output_data, 'capstone/date.parquet'))
 
 
 def main():
@@ -165,7 +165,7 @@ def main():
     input_data = "s3a://udacity-dend/"
     output_data = "s3a://lhemelt/"
     
-    #process_demographic_data(spark, input_data, output_data)    
+    process_demographic_data(spark, input_data, output_data)    
     process_immigration_data(spark, input_data, output_data)
 
 
