@@ -4,22 +4,22 @@ CREATE TABLE IF NOT EXISTS public.fact_immigration (
 	residency_country_id int4,
 	arrival_city_id int4,
 	arrival_date date,
-    travel_mode_id int4,
-    current_state_id int4,
-    departure_date date,
-    immigration_age int4,
-    visa_type_id int4,
-    birth_year int4,
-    gender char(1),
-    CONSTRAINT fact_immigration_pkey PRIMARY KEY (immigration_id)
+    	travel_mode_id int4,
+    	current_state_id int4,
+    	departure_date date,
+    	immigration_age int4,
+    	visa_type_id int4,
+    	birth_year int4,
+    	gender char(1),
+    	CONSTRAINT fact_immigration_pkey PRIMARY KEY (immigration_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.dim_date (
 	date_id date NOT NULL,
 	"month" int4,
-    "day" int4,
+    	"day" int4,
 	"year" int4,
-    week int4,
+    	week int4,
 	day_of_week int4,
 	CONSTRAINT dim_date_pkey PRIMARY KEY (date_id)
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.dim_state (
 
 CREATE TABLE IF NOT EXISTS public.dim_city (
 	city_id int4 NOT NULL IDENTITY(1,1),
-    city_code varchar(3),
+    	city_code varchar(3),
 	city_name varchar(256),
 	state_id int4,
 	median_age float,
@@ -72,13 +72,13 @@ CREATE TABLE IF NOT EXISTS public.staging_immigration (
 	residency_country_id int4,
 	arrival_city_id varchar(3),
 	arrival_date date,
-    travel_mode_id int4,
-    current_state_id varchar(3),
-    departure_date date,
-    immigration_age int4,
-    visa_type_id int4,
-    birth_year int4,
-    gender char(1)
+    	travel_mode_id int4,
+    	current_state_id varchar(3),
+    	departure_date date,
+    	immigration_age int4,
+    	visa_type_id int4,
+    	birth_year int4,
+    	gender char(1)
 );
 
 CREATE TABLE IF NOT EXISTS public.staging_demographic (
@@ -92,17 +92,17 @@ CREATE TABLE IF NOT EXISTS public.staging_demographic (
 	foreign_population int4,
 	avg_household_size double precision,
 	race_majority varchar(50),
-    race_count int4
+    	race_count int4
 );
 
 CREATE TABLE IF NOT EXISTS public.staging_city (
-    city_code varchar(3),
+    	city_code varchar(3),
 	city_name varchar(256),
 	state_code varchar(25)
 );
 
 CREATE TABLE IF NOT EXISTS public.staging_date (
-    date_id date
+    	date_id date
 );
 
 
