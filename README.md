@@ -61,13 +61,13 @@ Identify data quality issues, like missing values, duplicate data, etc.
 
 The two main datasets that require automated cleanup are the immigration and city demographic data.  I explored the data using Spark in a Jupyter notebook.  Some of my findings included:
 
-Immigration Data
+##### Immigration Data
 * The data spans immigrant arrival dates from 4/1/2016 to 4/30/2016
-* The total number of records arre 3,096,313
-* The dates arre provided as the number of days between 1/1/1960 and the given date
+* The total number of records are 3,096,313
+* The dates are provided as the number of days between 1/1/1960 and the given date
 * The field cicid is unique to each record
 
-City Demographic Data
+##### City Demographic Data
 * There are only 5 potential values for race
 
 #### Cleaning Steps
@@ -79,7 +79,7 @@ I created a python module called etl.py to clean up the data and import the clea
 When uploading to S3, I partitioned the immigration data by arrival date becuase it was never null and provided a fairly even distribution of the data for future pipeline steps. 
 
 I completed the following steps in etl.py to clean the immigration data and import it to S3:
-* Convert the fields to their appropriate data types
+* Convert the fields to their appropriate data types (integer)
 * Rename the fields to nice, easy to understand names
 * Remove any unneeded fields
 * Convert the date fields to the format yyyy-mm-dd
@@ -87,18 +87,16 @@ I completed the following steps in etl.py to clean the immigration data and impo
 * Write the data to an S3 bucket as parquet files partitioned by arrival date
 
 ##### Date Data
-
+From the cleaned immigration data frame, I extracted the unique arrival and departure dates into their own separate Spark data frames.  Bu combining their distinct values together via a union, I create a list of unique dates used throughout the immigration data to serve as a the basis for a date file.  This data was then written to the S3 bucket as parquet files.  I did not partition this data since it was only 1 single column of a limited amount of dates.
 
 ##### City Demographic Data
-When uploading to S3, I converted the city demographic data to parquet files as well because it is more efficient than csv.  I did not partition this dataset becuase I did not find an efficient field on which to do so and, following cleanup, the data was not significantly large.
+When uploading to S3, I converted the city demographic data to parquet files as well because it is more efficient than csv.  I did not partition this dataset becuase I did not find an efficient field on which to do so and, following cleanup, the data was not significantly large.  I elimiated duplicates with the same city and state in this data by keeping those records with the greatest race population.  This will allow for the potential to query immigration data based on the majority race in each city.   
 
 I completed the following steps in etl.py to clean the city demographic data and import it to S3:
-* Convert the fields to their appropriate data types
+* Convert the fields to their appropriate data types (integer, double)
 * Rename the fields to nice, easy to understand names
-* Remove any unneeded fields
-* Convert the date fields to the format yyyy-mm-dd
-* Duplicate the arrival_date field so that the data could be partitioned by arrival_date and still be included in the data files
-* Write the data to an S3 bucket as parquet files partitioned by arrival date
+* Remove duplicate records with the same city and state by keeping those records with the greatest race population
+* Write the data to an S3 bucket as parquet files
 
 The other, smaller datasets that came from I94_SAS_Labels_Descriptions.SAS does not require cleanup using Spark.  I manually examined this data and did not find any significant issues.  Under the assumption that these are official I94 values, I did not change any of the data values, nor did I omit any of it.  I added headers to each of these datasets. I also changed the comma delimter to a pipe for the city and country data due to some data values containing commas.  Once these changes were complete, I manaully uploaded the data files to the S3 bucket.  
 
