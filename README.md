@@ -176,9 +176,9 @@ The data dictionary for the final data model can be found [here](https://github.
 ### Step 5: Further Questions
 
 ##### Write a description of how you would approach the problem differently under the following scenarios:
-* The data was increased by 100x.
- * For the existing project, the Spark and Airflow processes are run in the Udacity workspace.  If the data was increased by 100x, I would run these processes on a more powerful environment in AWS, such as Amazon Elastic MapReduce (EMR) for Spark and Amazon Managed Workflows for Apache Airflow (MWAA) for Airflow.
-* The data populates a dashboard that must be updated on a daily basis by 7am every day.
- * As the data pipeline currently stands, it's built so that the fact table can be infused with new data on a daily basis.  I'd add to Airflow a schedule to run that dag sometime in the early morning and a Service Level Agreement (SLA) to ensure the dag completes in a reasonable amount of time.  Currently, the data pipeline is written assuming only new data will be added in updates.  If the updates include changes to existing data, then the data pipeline will have to be altered to account for this possibility, perhaps changing LoadTableOperator to be able to handle either inserts or updates or creating an entirely new operator for updates.   
-* The database needed to be accessed by 100+ people.
- * If the database needed to be access by 100+ people, I'd first analyze the performance of the exisitng Redshift data warehouse.  If better performance was needed, I'd consider creating an additonal data pipeline that created smaller, more specific data marts based on the data that people in different departments need.
+###### The data was increased by 100x.
+For the existing project, the Spark and Airflow processes are run in the Udacity workspace.  If the data was increased by 100x, I would run these processes on a more powerful environment in AWS, such as Amazon Elastic MapReduce (EMR) for Spark and Amazon Managed Workflows for Apache Airflow (MWAA) for Airflow.
+###### The data populates a dashboard that must be updated on a daily basis by 7am every day.
+As the data pipeline currently stands, it's built so that the fact table can be infused with new data on a daily basis.  I'd add to Airflow a schedule to run that dag sometime in the early morning and a Service Level Agreement (SLA) to ensure the dag completes in a reasonable amount of time.  Currently, the data pipeline is written assuming only new data will be added in updates.  If the updates include changes to existing data, then the data pipeline will have to be altered to account for this possibility, perhaps changing LoadTableOperator to be able to handle either inserts or updates or creating an entirely new operator for updates.   
+###### The database needed to be accessed by 100+ people.
+If the database needed to be access by 100+ people, I'd first analyze the performance of the exisitng Redshift data warehouse.  If better performance was needed, I'd consider creating an additonal data pipeline that created smaller, more specific data marts based on the data that people in different departments need.
