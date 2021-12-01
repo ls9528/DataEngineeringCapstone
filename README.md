@@ -137,8 +137,6 @@ I chose Airflow to complete this data pipeline process from S3 to Redshift becau
 
 ### Step 4: Run Pipelines to Model the Data 
 #### 4.1 Create the data model
-Build the data pipelines to create the data model.
-
 The data model itself is created by manually running a series of [create table statements](https://github.com/ls9528/DataEngineeringCapstone/blob/main/code/airflow/plugins/create_tables.sql) directly in Redshift.  From there, Airflow can complete the rest of the data pipeline process.
 
 As alluded to in the previous section, the data pipeline in Airflow consists of two main operators:
@@ -167,12 +165,10 @@ I split the data pipeline into two dags, one for the dimension tables and anothe
 ![fact_data_pipeline_dag](https://user-images.githubusercontent.com/90398812/144250535-6f5fe8df-c990-40ad-bd31-1a86ac43630b.png)
 
 #### 4.2 Data Quality Checks
-Explain the data quality checks you'll perform to ensure the pipeline ran as expected. These could include:
- * Integrity constraints on the relational database (e.g., unique key, data type, etc.)
- * Unit tests for the scripts to ensure they are doing the right thing
- * Source/Count checks to ensure completeness
- 
-Run Quality Checks
+The final operator called in both dags is a data quality check called DataQualityOperator.  It takes in as a parameter a series of queries to run on the newly populated tables to ensure the data pipeline runs as expected.  Two other parameters that this operator accepts is an expected value and any valid comparison (=, <>, >, <, >=, <=).  This allows the user much flexibility when creating data quality checks.  Because the data pipeline process I run is the first time these tables are populated, my currently written queries check that each dimension and fact table is populated with data (that the expected result is greater than 0).  However, due to the operator's flexibility to accept any valid comparison, other data quality checks can easily be included, such as:
+* Ensuring that values for a given field are not all null
+* Checking that a table has at least a certain amount of records
+* Confirming how many distinct values are in a given field
 
 #### 4.3 Data dictionary 
 The data dictionary for the final data model can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/DataDictionary.md). 
