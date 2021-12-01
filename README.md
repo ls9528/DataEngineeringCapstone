@@ -184,10 +184,39 @@ If the database needed to be accessed by 100+ people, I'd first analyze the perf
 
 ### Step 6: Data Model Query Examples
 
-Circling back to the original sample question posed in Step 1, here are query results to answer those questions:
+Circling back to the original sample questions posed in Step 1, here are query results to answer those questions:
 
 #### For a given country, what cities do immigrants arrive in when they enter the United States?
 
+```
+select c1.city_name as city_name, count(*) as immigrant_count 
+from fact_immigration i
+inner join dim_city c1 on i.arrival_city_id = c1.city_id
+inner join dim_country c2 on c2.country_id = i.citizenship_country_id
+where c2.country_name = 'CHINA, PRC'
+group by c1.city_name
+order by immigrant_count desc
+limit 10;
+```
+
 #### Are immigrants arriving in US cities that have a younger or older average population?
 
+```
+select cast(c.median_age as integer) as age, count(*) as immigrant_count 
+from fact_immigration i
+inner join dim_city c on i.arrival_city_id = c.city_id
+where age <> 0
+group by age;
+```
+
+
 #### What states are immigrants residing in when living in the United States?
+
+```
+select s.state_name as state_name, count(*) as immigrant_count 
+from fact_immigration i
+inner join dim_state s on i.current_state_id = s.state_id
+group by s.state_name
+order by immigrant_count desc
+limit 10;
+```
