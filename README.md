@@ -198,6 +198,7 @@ group by c1.city_name
 order by immigrant_count desc
 limit 10;
 ```
+![alt text](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/query1Results.png)
 
 #### Are immigrants arriving in US cities that have a younger or older average population?
 
@@ -208,6 +209,7 @@ inner join dim_city c on i.arrival_city_id = c.city_id
 where age <> 0
 group by age;
 ```
+![alt text](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/query2Results.png)
 
 
 #### What states are immigrants residing in when living in the United States?
@@ -220,3 +222,4 @@ group by s.state_name
 order by immigrant_count desc
 limit 10;
 ```
+![alt text](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/query3Results.png)
