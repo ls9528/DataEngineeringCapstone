@@ -29,15 +29,14 @@ def create_spark_session():
     return spark
 
 
-def process_demographic_data(spark, input_data, output_data):
+def process_demographic_data(spark, output_data):
     """
     Description: 
-        - extracts, transforms and loads demographic data into S3 data lake
+        - extracts, transforms and loads demographic data into S3 parquet files
 
     Arguments:
         spark: Spark session
-        input_data: location of demographic data
-        output_data: location of S3 data lake
+        output_data: location of S3 bucket
 
     Returns:
         None
@@ -77,15 +76,14 @@ def process_demographic_data(spark, input_data, output_data):
     df_spark.write.mode('overwrite').parquet(os.path.join(output_data, 'capstone/demographic.parquet'))
 
 
-def process_immigration_data(spark, input_data, output_data):
+def process_immigration_data(spark, output_data):
     """
     Description: 
-        - extracts, transforms and loads S3 log data into S3 data lake
+        - extracts, transforms and loads immigration data into S3 parquet files
 
     Arguments:
         spark: Spark session
-        input_data: location of S3 log data
-        output_data: location of S3 data lake
+        output_data: location of S3 bucket
 
     Returns:
         None
@@ -146,8 +144,8 @@ def main():
     """
     Description: 
         - creates a Spark session
-        - calls process_demographic_data to extract, transform and load demographic data into S3 data lake
-        - calls process_immigration_data to extract, transform and load immigration data into S3 data lake
+        - calls process_demographic_data to extract, transform and load demographic data into S3 parquet files
+        - calls process_immigration_data to extract, transform and load immigration data into S3 parquet files
         - closes connection
 
     Arguments:
@@ -157,11 +155,10 @@ def main():
         None
     """
     spark = create_spark_session()
-    input_data = "s3a://udacity-dend/"
     output_data = "s3a://lhemelt/"
     
-    process_demographic_data(spark, input_data, output_data)    
-    process_immigration_data(spark, input_data, output_data)
+    process_demographic_data(spark, output_data)    
+    process_immigration_data(spark, output_data)
 
 
 if __name__ == "__main__":
