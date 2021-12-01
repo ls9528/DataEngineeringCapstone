@@ -12,6 +12,7 @@ The project follows the following steps:
 * Step 3: Define the Data Model
 * Step 4: Run ETL to Model the Data
 * Step 5: Further Questions
+* Step 6: Data Model Query Examples
 
 ### Step 1: Scope the Project and Gather Data
 
@@ -180,3 +181,13 @@ For the existing project, the Spark and Airflow processes are run in the Udacity
 As the data pipeline currently stands, it's built so that the fact table can be infused with new data on a daily basis.  I'd add to Airflow a schedule to run that dag sometime in the early morning and a Service Level Agreement (SLA) to ensure the dag completes in a reasonable amount of time.  Currently, the data pipeline is written assuming only new data will be added in updates.  If the updates include changes to existing data, then the data pipeline will have to be altered to account for this possibility, perhaps changing LoadTableOperator to be able to handle either inserts or updates or perhaps creating an entirely new operator for updates.   
 ###### The database needed to be accessed by 100+ people.
 If the database needed to be accessed by 100+ people, I'd first analyze the performance of the existing Redshift data warehouse.  The Redshift database I used was a dc2.large node type with 4 nodes, perhaps a more powerful node type and number of nodes would be needed.  If even better performance was needed, I'd consider creating an additonal data pipeline that created smaller, more specific data marts based on the data that people in different departments need.
+
+### Step 6: Data Model Query Examples
+
+Circling back to the original sample question posed in Step 1, here are query results to answer those questions:
+
+#### For a given country, what cities do immigrants arrive in when they enter the United States?
+
+#### Are immigrants arriving in US cities that have a younger or older average population?
+
+#### What states are immigrants residing in when living in the United States?
