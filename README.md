@@ -96,8 +96,6 @@ The other, smaller datasets that came from I94_SAS_Labels_Descriptions.SAS does 
 
 ### Step 3: Define the Data Model
 #### 3.1 Conceptual Data Model
-Map out the conceptual data model and explain why you chose that model
-
 For this project, I used a modified star schema for the data model.  My intention is to keep the queries as simple as possible by not making the tables too normalized and limiting the required number of joins.  An ER diagram of this data model can be found [here](https://github.com/ls9528/DataEngineeringCapstone/blob/main/documentation/ERDiagram.pdf).  
 
 At the center of the data model is a fact table focusing on immigration (fact_immigration), the majority of which can be found in the immigration data.  The dimensions provide additonal information to support the immigration data (dim_date, dim_country, dim_state, dim_city, dim_visa_type, dim_travel_mode) and, other than dim_date, are taken from the other data sources.  The only diversion from the traditional star schema can be found with dim_state, which connects to dim_city as well as fact_immigration.  
@@ -116,8 +114,6 @@ The following tables use an existing field from the original data as primary key
 * dim_travel_mode
 
 #### 3.2 Mapping Out Data Pipelines
-List the steps necessary to pipeline the data into the chosen data model
-
 The data model is realized as a Redshift data warehouse in AWS.  I chose to store it in Redshift due to its ability to efficiently handle large amounts of data.
 
 Some of the S3 data files do not need further transforming and can be inserted directly into their respective dimension tables in Redshift. These are:
@@ -127,15 +123,48 @@ Some of the S3 data files do not need further transforming and can be inserted d
 * Travel mode data -> dim_travel_mode
 
 The rest of the S3 data files need further transformation prior to being inserted into the final Redshift tables.  The first step with this data is to insert it into staging tables.  From there, those staging tables can be queried to insert the data into the final tables in the expected format.
-* Date data - A special query to the date staging table uses date functions to populate the additonal columns in dim_date (month, day, year, week, day_of_week).
-* City data and city demographic data - After copying this data to their respective staging tables, a query joins these tables together on city name and state abbreviation to populate the dim_city table.  This query also makes a join to the already existing dim_state table to include that table's state_id field in dim_city.  
-* Immigration data - The query to the immigration staging table to populate the fact table includes joins to dim_country, dim_city, and dim_state.  These joins allow for the various newly created ID fields in these dimension tables to be included in fact_immigration.
+
+##### Date Data
+A special query to the date staging table uses date functions to populate the additonal columns in dim_date (month, day, year, week, day_of_week).
+
+##### City Data and City Demographic Data
+After copying this data to their respective staging tables, a query joins these tables together on city name and state abbreviation to populate the dim_city table.  This query also makes a join to the already existing dim_state table to include that table's state_id field in dim_city.  
+
+##### Immigration Data
+The query to the immigration staging table to populate the fact table includes joins to dim_country, dim_city, and dim_state.  These joins allow for the various newly created ID fields in these dimension tables to be included in fact_immigration.
 
 I chose Airflow to complete this data pipeline process from S3 to Redshift because it's a simple way to visualize the data pipeline process and it can handle processing the data.  It also has has many useful features, such as scheduling processes and adding data quality checks.
 
 ### Step 4: Run Pipelines to Model the Data 
 #### 4.1 Create the data model
 Build the data pipelines to create the data model.
+
+The data model itself is created by manually running a series of [create table statements](https://github.com/ls9528/DataEngineeringCapstone/blob/main/code/airflow/plugins/create_tables.sql) directly in Redshift.  From there, Airflow can complete the rest of the data pipeline process.
+
+As alluded to in the previous section, the data pipeline in Airflow consists of two main operators:
+##### StageToRedshiftOperator
+This operator takes a file and copies it directly into a Redshift table.  It's capable of handling either parquet or csv files by indicating the file type in a parameter.  Another useful parameter is whether or not to truncate the table prior to loading any data (which is set to true for all staging and dimension table loads).  For csv files, optional csv-specific parameters can also be set, such as whether a header exists and what delimiter is used.  This operator is used to populate all staging tables and some of the dimension tables, specifically the following:
+* staging_date
+* staging_city
+* staging_demographic 
+* dim_country
+* dim_state
+* dim_visa_type
+* dim_dim_travel_mode
+
+##### LoadTableOperator
+This operator queries tables populated using StageToRedShiftOperator and populates another Redshift table with those query results.  It provides an optional parameter called columns that allows the user to specify the fields in which to enter data rather than assuming every field is being populated.  Another useful parameter is whether or not to truncate the table prior to loading any data (which is set to true for all dimension table loads and set to false for the incremental fact table loads).  There is a [helper file](https://github.com/ls9528/DataEngineeringCapstone/blob/main/code/airflow/plugins/helpers/sql_queries.py) that contains all the queries referenced in this operator.  This operator is used to populate some dimension tables and the fact table, specifically the following:
+* dim_date
+* dim_city
+* fact_immigration
+
+I split the data pipeline into two dags, one for the dimension tables and another for the fact table.  This was done so that the smaller dimension tables data could be loaded together as a whole, while the much larger immigration data could be split up into separate loads by arrival date.  Thus, as new immigration data becomes available going forward, it can be added to the fact_immigration table on a daily basis in small increments. 
+
+##### dim_data_pipeline_dag
+![dim_data_pipeline_dag](https://user-images.githubusercontent.com/90398812/144250505-0c7591f1-685f-4682-9e8b-321602b71643.png)
+
+##### fact_data_pipeline_dag
+![fact_data_pipeline_dag](https://user-images.githubusercontent.com/90398812/144250535-6f5fe8df-c990-40ad-bd31-1a86ac43630b.png)
 
 #### 4.2 Data Quality Checks
 Explain the data quality checks you'll perform to ensure the pipeline ran as expected. These could include:
